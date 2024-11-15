@@ -1,45 +1,35 @@
-from flask import Flask, request, jsonify, render_template # type: ignore
-import ssl
 import socket
+import ssl
+from flask import Flask, request, jsonify
 from datetime import datetime
 
 app = Flask(__name__)
 
-def get_certificate_info(hostname, port=443):
-    """Fetch SSL/TLS certificate details from a website."""
-    context = ssl.create_default_context()
-
+def get_ssl_details(domain):
     try:
-        # Establish a connection and fetch the certificate
-        with socket.create_connection((hostname, port)) as sock:
-            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+        # Establish a socket connection to fetch SSL certificate
+        context = ssl.create_default_context()
+        with socket.create_connection((domain, 443)) as sock:
+            with context.wrap_socket(sock, server_hostname=domain) as ssock:
                 cert = ssock.getpeercert()
-
+        
         # Extract certificate details
-        issuer = dict(x[0] for x in cert['issuer'])
         subject = dict(x[0] for x in cert['subject'])
+        issuer = dict(x[0] for x in cert['issuer'])
         valid_from = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z")
         valid_to = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
-        current_date = datetime.utcnow()
-
-        # Analyze certificate validity
-        is_valid = valid_from <= current_date <= valid_to
-        days_left = (valid_to - current_date).days
-
+        days_left = (valid_to - datetime.utcnow()).days
+        
         return {
             "Subject": subject,
             "Issuer": issuer,
-            "Valid From": valid_from.strftime("%Y-%m-%d %H:%M:%S"),
-            "Valid To": valid_to.strftime("%Y-%m-%d %H:%M:%S"),
-            "Is Valid": is_valid,
-            "Days Left": days_left,
+            "Valid From": valid_from.strftime("%Y-%m-%d"),
+            "Valid To": valid_to.strftime("%Y-%m-%d"),
+            "Is Valid": valid_to > datetime.utcnow(),
+            "Days Left": days_left
         }
     except Exception as e:
         return {"Error": str(e)}
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -47,8 +37,9 @@ def analyze():
     if not domain:
         return jsonify({"Error": "No domain provided"}), 400
     
-    result = get_certificate_info(domain.strip())
-    return jsonify(result)
+    # Fetch SSL details for the provided domain
+    ssl_details = get_ssl_details(domain)
+    return jsonify(ssl_details)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
