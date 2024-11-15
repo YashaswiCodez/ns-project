@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/analyze", "destination": "https://your-backend-url.com/analyze" }
+  ]
+}
