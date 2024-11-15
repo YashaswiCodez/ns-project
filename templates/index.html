@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSL/TLS Certificate Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        header {
+            background: #0077cc;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+        }
+        form {
+            margin: 20px 0;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 80%;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background: #0077cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005fa3;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8e8e8;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SSL/TLS Certificate Analyzer</h1>
+    </header>
+    <main>
+        <form id="analyze-form">
+            <input type="text" id="domain" placeholder="Enter website domain (e.g., example.com)" required>
+            <button type="submit">Analyze</button>
+        </form>
+        <div id="results"></div>
+    </main>
+    <script>
+        document.getElementById('analyze-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const domain = document.getElementById('domain').value;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = "Analyzing...";
+
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `domain=${encodeURIComponent(domain)}`,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.Error) {
+                    resultsDiv.innerHTML = `<p class="error">Error: ${data.Error}</p>`;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h3>Certificate Details:</h3>
+                        <p><strong>Subject:</strong> ${JSON.stringify(data.Subject)}</p>
+                        <p><strong>Issuer:</strong> ${JSON.stringify(data.Issuer)}</p>
+                        <p><strong>Valid From:</strong> ${data['Valid From']}</p>
+                        <p><strong>Valid To:</strong> ${data['Valid To']}</p>
+                        <p><strong>Is Valid:</strong> ${data['Is Valid'] ? 'Yes' : 'No'}</p>
+                        <p><strong>Days Left:</strong> ${data['Days Left']}</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                resultsDiv.innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
+            });
+        });
+    </script>
+</body>
+</html>
