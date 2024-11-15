@@ -70,14 +70,21 @@
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = "Analyzing...";
 
-            fetch('/analyze', {
+            const backendURL = 'https://your-backend-url.com/analyze';
+
+            fetch(backendURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: `domain=${encodeURIComponent(domain)}`,
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.Error) {
                     resultsDiv.innerHTML = `<p class="error">Error: ${data.Error}</p>`;
