@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/analyze", "destination": "https://your-backend-url.com/analyze" }
+    { "source": "/analyze", "destination": "https://ns-project-vkro-fzhv5a5tr-yashaswicodezs-projects.vercel.app/analyze" }
   ]
 }
